@@ -72,6 +72,28 @@ jobs:
     if: ${{ vars.DEPLOY_ENABLED == 'true' }}
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare deploy directory
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script: |
+            set -e
+            mkdir -p ${{ secrets.LIGHTSAIL_PROJECT_PATH }}
+
+      - name: Upload compose.yml
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          source: compose.yml
+          target: ${{ secrets.LIGHTSAIL_PROJECT_PATH }}
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -79,6 +101,7 @@ jobs:
           username: ${{ secrets.LIGHTSAIL_USER }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
+            set -e
             cd ${{ secrets.LIGHTSAIL_PROJECT_PATH }}
             docker compose pull
             docker compose up -d
